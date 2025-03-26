@@ -1,0 +1,5 @@
+com/whale/rabbitmq/MQproducer.class
+com/whale/rabbitmq/MQconsumer.class
+com/whale/rabbitmq/MQconfig.class
+com/whale/rabbitmq/RabbitMQapplication.class
+com/whale/rabbitmq/CommandLineAppStartupRunner.class
