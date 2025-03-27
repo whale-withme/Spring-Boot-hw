@@ -1,0 +1,10 @@
+/home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/config/RedisConfig.java
+/home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/constant/RedisPreKey.java
+/home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/config/RabbitmqConfig.java
+/home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/constant/RedisKey.java
+/home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/controller/SeckillController.java
+/home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/dao/SeckillDao.java
+/home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/boot/InitRedis.java
+/home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/entity/Inventory.java
+/home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/RewriteApplication.java
+/home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/entity/SecKill.java
