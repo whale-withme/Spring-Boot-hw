@@ -6,8 +6,4 @@
   
 目前还在尝试重写一个秒杀项目的后端处理逻辑，也会放在这个repo下面，完成之后会分离出去。  
 
-mvn archetype:generate  \
--DgroupId=com.whale.seckill \
--DartifactId=seckill-rewrite \
--Dversion=1.0-SNAPSHOT \
--DinteractiveMode=false
+

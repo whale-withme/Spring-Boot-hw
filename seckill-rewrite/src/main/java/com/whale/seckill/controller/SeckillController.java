@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.whale.seckill.constant.RedisKey;
 import com.whale.seckill.constant.RedisPreKey;
-import com.whale.seckill.entity.Inventory;
+import com.whale.seckill.entity.InventoryList;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -28,14 +28,18 @@ public class SeckillController {
     
     @GetMapping("/inventory/all")
     @ResponseBody
-    public List<Inventory> RestGetInventoryAll(){
+    public List<InventoryList> RestGetInventoryAll(){
         Jedis jedis = jedisPool.getResource();
-        List<Inventory> inventories = new ArrayList<>();  // list 是接口不能直接被实例化
+        List<InventoryList> inventories = new ArrayList<>();  // list 是接口不能直接被实例化
         Set<String> SeckillIdSet = jedis.smembers(RedisKey.SECKILL_ID);
 
         for(String seckillid : SeckillIdSet){
-            String Inventorystr = jedis.get(seckillid);
-            inventories.add(new Inventory(Long.parseLong(seckillid), Integer.parseInt(Inventorystr)));
+            System.out.println(seckillid);
+            String checkString = RedisPreKey.INVENTORY + seckillid;
+            String Inventorystr = jedis.get(checkString);
+
+            if(Inventorystr != null)
+                inventories.add(new InventoryList(seckillid, Integer.parseInt(Inventorystr)));
         }
         return inventories;
     }
