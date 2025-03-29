@@ -35,7 +35,7 @@ public class InitRedis implements CommandLineRunner{
 
         logger.info("Redis 初始化开始");
         for(SecKill seckill : seckillList){
-            System.out.println(seckill.getSeckillId() + " " + seckill.getInventory());
+            // System.out.println(seckill.getSeckillId() + " " + seckill.getInventory());
             String seckill_id = String.valueOf(seckill.getSeckillId());
             jedis.sadd(RedisKey.SECKILL_ID, seckill_id);    // 丢掉了前缀
 

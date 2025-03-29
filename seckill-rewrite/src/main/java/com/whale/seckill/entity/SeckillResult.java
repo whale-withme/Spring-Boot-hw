@@ -12,7 +12,13 @@ import lombok.NoArgsConstructor;
 public class SeckillResult {
     private long seckillId;
     private long userphone;
-    private SeckillStateEnum state;
+    private int state;
+    private String stateInfo;
 
-
+    public SeckillResult(long seckillid, long userphone, SeckillStateEnum code){
+        this.seckillId = seckillid;
+        this.userphone = userphone;
+        this.state = code.getState();
+        this.stateInfo = code.getStateInfo();
+    }
 }

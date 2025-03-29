@@ -6,6 +6,7 @@ import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import com.whale.seckill.constant.RedisPreKey;
@@ -18,6 +19,7 @@ import com.whale.seckill.service.SeckillService;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+@Service
 public class SeckillServiceImpl implements SeckillService{
 
     @Autowired
@@ -40,6 +42,9 @@ public class SeckillServiceImpl implements SeckillService{
         String inventoryRemainstr = jedis.get(RedisPreKey.INVENTORY + seckillId);
         String boughtOrder = String.valueOf(seckillId + userphone);   // 维护已购买商品+用户集合
         int inventoryRemain = 0;
+
+        if(md5.equals(getMD5(seckillId)) != true)
+            return new SeckillResult(seckillId, userphone, SeckillStateEnum.MD5_ERROR);
 
         try{
             inventoryRemain = Integer.parseInt(inventoryRemainstr);
