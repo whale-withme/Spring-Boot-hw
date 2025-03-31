@@ -6,7 +6,10 @@ public enum SeckillStateEnum {
     DATABASE_ERROR(03, "数据库相关异常"),
     MD5_ERROR(02, "商品md5验证错误"),
     LOCK_ERROR(04, "乐观锁异常"),
+    DECR_INVENTORY_FAILED(05, "库存减少失败"),
+    NULL_INFO(06, "无信息"),
     
+    DECR_INVENTORY_SUCCESS(12, "库存减少成功"),
     ORDER_GENERATED(11, "订单生成"),
     PROCESSING(10, "订单已接收，处理中");
 

@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.whale.seckill.constant.RedisKey;
 import com.whale.seckill.constant.RedisPreKey;
+import com.whale.seckill.dto.Status;
 import com.whale.seckill.entity.InventoryList;
 import com.whale.seckill.entity.SeckillResult;
+import com.whale.seckill.enums.SeckillStateEnum;
 import com.whale.seckill.service.SeckillService;
 
 import redis.clients.jedis.Jedis;
@@ -59,9 +61,17 @@ public class SeckillController {
         return seckillResult;
     }
 
-    // @GetMapping("/inventory/getmd5")
-    // @ResponseBody
-    // public String getMD5(long seckillId){
-    //     StringNVarcharType
-    // }
+    @GetMapping("/status/{seckillid}/{userphone}")
+    @ResponseBody
+    public Status getSeckillStatus(@PathVariable("seckillid") long seckillid, @PathVariable("userphone") long userphone){
+        Jedis jedis = jedisPool.getResource();
+        String status = jedis.get(RedisPreKey.SECKILL_STATUS + seckillid + userphone);
+
+        if(status == null){
+            return new Status(seckillid, userphone, "无订单信息");
+        }
+
+        jedis.close();
+        return new Status(seckillid, userphone, status);
+    }
 }

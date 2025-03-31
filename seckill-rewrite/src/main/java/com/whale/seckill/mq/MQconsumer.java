@@ -18,7 +18,7 @@ import com.whale.seckill.exception.SeckillException;
 import com.whale.seckill.service.DaoService;
 
 @Component
-@RabbitListener(queues = "seckill_queue1", ackMode = "MANUAL")
+@RabbitListener(queues = "seckill_queue1", ackMode = "MANUAL", containerFactory = "rabbitListenerContainerFactory")
 public class MQconsumer {
     @Autowired
     private DaoService daoService;
@@ -26,6 +26,7 @@ public class MQconsumer {
     @Autowired
     private static final Logger logger = LoggerFactory.getLogger(MQconsumer.class);
 
+    // 直接解析json格式，不需要生产者转换
     @RabbitHandler
     public void HandleSeckillConsumer(@Payload OrderMessage order, Channel channel, Message message){
         // 异常类处理，可能要设计单独的seckillException

@@ -45,7 +45,7 @@ public class SeckillServiceImpl implements SeckillService{
         Jedis jedis = jedisPool.getResource();
         String seckillIdstr = String.valueOf(seckillId);
         String inventoryRemainstr = jedis.get(RedisPreKey.INVENTORY + seckillId);
-        String boughtOrder = String.valueOf(seckillId + userphone);   // 维护已购买商品+用户集合
+        String boughtOrder = String.valueOf(seckillId) + String.valueOf(userphone);   // 维护已购买商品+用户集合
         long inventoryRemain = 0;
 
         if(md5.equals(getMD5(seckillId)) != true)

@@ -63,6 +63,8 @@ public class DaoServiceImpl implements DaoService{
         }
 
         payOrderDao.save(order);
+        // 维护已购买集合
+        jedis.sadd(RedisPreKey.BOUGHT_SET, String.valueOf(seckillId) + String.valueOf(userphone));
         jedis.set(seckillState, SeckillStateEnum.ORDER_GENERATED.toString());
         jedis.close();
     }
@@ -71,17 +73,22 @@ public class DaoServiceImpl implements DaoService{
     @Override
     public void ReduceInventory(long seckillId, long userphone, Date nowtime) throws SeckillException{
         SecKill seckill = seckillDao.findById(seckillId).orElseThrow(() -> new SeckillException(SeckillStateEnum.DATABASE_ERROR));
+        Jedis jedis = jedisPool.getResource();
+
         if(seckill.getInventory() <= 0)
             throw new SeckillException(SeckillStateEnum.SOLD_OUT);
 
         try{
             int updatecnt = seckillDao.reduceInventory(seckill.getSeckillId(), seckill.getVersion());
+            jedis.set(RedisPreKey.SECKILL_STATUS + seckillId + userphone, SeckillStateEnum.DECR_INVENTORY_SUCCESS.toString());
             InsertPayorder(seckill.getSeckillId(), userphone, nowtime);
         }catch(SeckillException err){
+            jedis.set(RedisPreKey.SECKILL_STATUS + seckillId + userphone, SeckillStateEnum.DECR_INVENTORY_FAILED.toString());
             if(err.getExceptionState() == SeckillStateEnum.REPEAT_ORDER)
                 throw err;
             else
                 throw new SeckillException(SeckillStateEnum.LOCK_ERROR);
         }
+        jedis.close();
     }
 }

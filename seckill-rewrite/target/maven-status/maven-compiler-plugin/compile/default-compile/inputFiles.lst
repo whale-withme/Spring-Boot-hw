@@ -3,6 +3,7 @@
 /home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/config/RabbitmqConfig.java
 /home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/boot/InitRedis.java
 /home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/exception/SeckillException.java
+/home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/dto/Status.java
 /home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/service/impl/SeckillServiceImpl.java
 /home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/entity/InventoryList.java
 /home/whale/job/project/hw/seckill-rewrite/src/main/java/com/whale/seckill/config/RedisConfig.java

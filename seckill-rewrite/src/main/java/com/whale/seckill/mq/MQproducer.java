@@ -29,13 +29,12 @@ public class MQproducer {
     }
 
     public void send(OrderMessage order){
-        String orderJson = new String("");
-        try{
-            orderJson = objectMapper.writeValueAsString(order);
-        }catch(JsonProcessingException err){
-            logger.error("订单json解析异常", err);
+        try {
+            // 直接发送 OrderMessage 对象，而非 JSON 字符串
+            rabbitTemplate.convertAndSend(RabbitmqConfig.EXCHANGE_NAME, "", order);
+            logger.info("订单发送至队列: " + rabbitmqConfig.QUEUE_NAME);
+        } catch (Exception e) {
+            logger.error("订单发送异常", e);
         }
-        rabbitTemplate.convertAndSend(RabbitmqConfig.EXCHANGE_NAME, "", orderJson);
-        logger.info("订单发送至队列" + rabbitmqConfig.QUEUE_NAME);
     }
 }
