@@ -3,8 +3,11 @@ package com.whale.seckill.enums;
 public enum SeckillStateEnum {
     SOLD_OUT(00, "已售完"),
     REPEAT_ORDER(01, "重复下单"),
+    DATABASE_ERROR(03, "数据库相关异常"),
     MD5_ERROR(02, "商品md5验证错误"),
-
+    LOCK_ERROR(04, "乐观锁异常"),
+    
+    ORDER_GENERATED(11, "订单生成"),
     PROCESSING(10, "订单已接收，处理中");
 
 

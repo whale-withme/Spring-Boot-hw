@@ -9,6 +9,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Version;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,13 +23,16 @@ import lombok.NoArgsConstructor;
 public class SecKill {
     @Id
     @Column(name = "seckill_id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long seckillId;
     
     private String name;
     private int inventory;
-    private Date start_time;
-    private Date end_time;
-    private Date create_time;
+    @Column(name = "start_time")
+    private Date startTime;
+    @Column(name = "end_time")
+    private Date endTime;
+    @Column(name = "create_time")
+    private Date createTime;
+    @Version
     private long version;
 }

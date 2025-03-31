@@ -6,6 +6,7 @@ import java.util.Set;
 
 import javax.annotation.Resource;
 
+import org.hibernate.type.StringNVarcharType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -57,4 +58,10 @@ public class SeckillController {
         SeckillResult seckillResult = seckillService.hanlePreSeckill(seckillId, userphone, md5);
         return seckillResult;
     }
+
+    // @GetMapping("/inventory/getmd5")
+    // @ResponseBody
+    // public String getMD5(long seckillId){
+    //     StringNVarcharType
+    // }
 }
