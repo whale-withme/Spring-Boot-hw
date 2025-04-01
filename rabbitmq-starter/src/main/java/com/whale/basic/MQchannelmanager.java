@@ -1,11 +1,13 @@
-package com.whale;
+package com.whale.basic;
+
+import org.springframework.stereotype.Component;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 
 import com.rabbitmq.client.ConnectionFactory;
 
-
+@Component
 public class MQchannelmanager {
     static String host;
     static int port;
@@ -26,6 +28,7 @@ public class MQchannelmanager {
         factory.setPassword(passwd);
 
         Connection connection = factory.newConnection();
+        // 复用tcp连接，创建信道
         Channel channel = connection.createChannel();
         return channel;
     }

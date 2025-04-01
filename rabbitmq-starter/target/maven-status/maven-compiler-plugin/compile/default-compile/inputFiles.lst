@@ -1,4 +1,5 @@
-/home/whale/job/project/hw/rabbitmq-starter/src/main/java/com/whale/Main.java
 /home/whale/job/project/hw/rabbitmq-starter/src/main/java/com/whale/MQchannelmanager.java
 /home/whale/job/project/hw/rabbitmq-starter/src/main/java/com/whale/MQconsumer.java
+/home/whale/job/project/hw/rabbitmq-starter/src/main/java/com/whale/Consumer.java
+/home/whale/job/project/hw/rabbitmq-starter/src/main/java/com/whale/Start.java
 /home/whale/job/project/hw/rabbitmq-starter/src/main/java/com/whale/MQproducer.java

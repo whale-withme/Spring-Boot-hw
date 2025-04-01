@@ -1,7 +1,10 @@
-package com.whale;
+package com.whale.basic;
+
+import org.springframework.stereotype.Component;
 
 import com.rabbitmq.client.Channel;
 
+@Component
 public class MQconsumer {
     String queueName;
 

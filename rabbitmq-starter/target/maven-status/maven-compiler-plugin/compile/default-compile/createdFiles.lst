@@ -1,4 +1,3 @@
 com/whale/MQconsumer.class
 com/whale/MQchannelmanager.class
-com/whale/Main.class
 com/whale/MQproducer.class
