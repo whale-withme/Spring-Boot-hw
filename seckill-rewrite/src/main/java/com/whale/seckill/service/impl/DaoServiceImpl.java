@@ -37,19 +37,10 @@ public class DaoServiceImpl implements DaoService{
     @Autowired
     private static final Logger logger = LoggerFactory.getLogger(DaoServiceImpl.class);
 
+    // 订单保存
     @Override
     @Transactional
     public void InsertPayorder(long seckillId, long userphone, Date date) throws SeckillException{
-        // int inventoryRemain;
-        // try{
-        //     inventoryRemain = seckillDao.findInventoryById(seckillId);
-        //     if(inventoryRemain <= 0){
-        //         logger.error("订单接受处理，数据库商品库存不足");
-        //         throw new SeckillException(SeckillStateEnum.SOLD_OUT);
-        //     }
-        // }catch(SeckillException err){
-        //     logger.error(err.toString());
-        // }
 
         // 订单重复检查
         Jedis jedis = jedisPool.getResource();
@@ -77,6 +68,10 @@ public class DaoServiceImpl implements DaoService{
 
         if(seckill.getInventory() <= 0)
             throw new SeckillException(SeckillStateEnum.SOLD_OUT);
+        else if((nowtime.before(seckillDao.findStarttimeById(seckillId)) || 
+                (nowtime.after(seckillDao.findEndtimeById(seckillId))))){
+            throw new SeckillException(SeckillStateEnum.DATE_EXPIRED);
+        }
 
         try{
             int updatecnt = seckillDao.reduceInventory(seckill.getSeckillId(), seckill.getVersion());

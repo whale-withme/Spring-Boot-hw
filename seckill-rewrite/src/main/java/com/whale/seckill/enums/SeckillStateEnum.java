@@ -7,6 +7,7 @@ public enum SeckillStateEnum {
     MD5_ERROR(02, "商品md5验证错误"),
     LOCK_ERROR(04, "乐观锁异常"),
     DECR_INVENTORY_FAILED(05, "库存减少失败"),
+    DATE_EXPIRED(06, "秒杀时间不在范围内"),
     NULL_INFO(06, "无信息"),
     
     DECR_INVENTORY_SUCCESS(12, "库存减少成功"),
