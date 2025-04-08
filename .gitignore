@@ -1,2 +1,6 @@
 instruction.md
 *.class
+**/class/
+.vscode/
+
+mybatis*/

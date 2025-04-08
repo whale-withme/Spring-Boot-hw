@@ -60,25 +60,27 @@ public class RedisDaoImpl {
         ObjectMapper objectMapper = new ObjectMapper();
         String useString = null;
         try{
-            useString = objectMapper.writeValueAsString(user);
+            useString = objectMapper.writeValueAsString(user); // redis zset只能存储字符串
         }catch(JsonProcessingException err){
             System.err.println(err);
             return RedisEnums.JSONPARSE_FAILED.toString();
         }
         
         Jedis jedis = null;
+        String result = RedisEnums.ZADD_SUCCESS.toString();
         try{
             jedis = jedisPool.getResource();
             jedis.zadd(zset, score, useString);
-            return RedisEnums.ZADD_SUCCESS.toString();
         }
         catch(Exception err){
+            result = RedisEnums.ZADD_FAILED.toString();
             System.err.println(err);
         }
         finally{
             if(jedis != null)
                 jedis.close();
         }
+        return result;
     }
 
 
