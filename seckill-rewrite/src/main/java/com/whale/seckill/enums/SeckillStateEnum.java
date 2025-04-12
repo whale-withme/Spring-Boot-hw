@@ -9,6 +9,8 @@ public enum SeckillStateEnum {
     DECR_INVENTORY_FAILED(05, "库存减少失败"),
     DATE_EXPIRED(06, "秒杀时间不在范围内"),
     NULL_INFO(06, "无信息"),
+    JSON_ANALYSIS_FAILED(07, "json格式解析错误"),
+
     
     DECR_INVENTORY_SUCCESS(12, "库存减少成功"),
     ORDER_GENERATED(11, "订单生成"),

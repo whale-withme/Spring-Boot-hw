@@ -47,6 +47,7 @@ public class DaoServiceImpl implements DaoService{
         String seckillState = RedisPreKey.SECKILL_STATUS + seckillId + userphone;
 
         PayOrder order = new PayOrder(seckillId, userphone, date, PayOrderStateEnum.UNPAID);
+        // id和手机号码双重检查  
         if(payOrderDao.existsBySeckillIdAndUserphone(seckillId, userphone)){
             logger.error("订单重复秒杀");
             jedis.set(seckillState, SeckillStateEnum.REPEAT_ORDER.toString());
