@@ -2,26 +2,73 @@ package mr
 
 // package main
 
-import "log"
-import "net"
-import "os"
-import "net/rpc"
-import "net/http"
+import (
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"net/rpc"
+	"os"
+)
 
-type TaskStatus struct {
-}
+// job状态
+type JobPhase int
 
-type Task struct {
-	filename string
-	id       int
-	status   TaskStatus
-}
+const (
+	UNSTART JobPhase = iota
+	MAPPING
+	REDUCING
+	DONE
+	ERROR
+)
+
+type TaskType int
+
+const (
+	MAP TaskType = iota
+	REDUCE
+)
+
+//////////
+
+type TaskStatus int
+
+const (
+	WAITING TaskStatus = iota
+)
+
+// type Task struct {
+// 	filename string
+// 	id       int
+// 	status   TaskStatus
+// }
 
 type Coordinator struct {
 	// Your definitions here.
-	files   []string
-	nMap    int
-	nReduce int
+	files         []string
+	nMap          int
+	nReduce       int
+	taskCounter   int
+	completeTask  int      // 任务计数器
+	schedulePhase JobPhase // 任务完成/调度时期
+	taskHolder    map[int]*TaskInfo
+
+	heartbeatCh chan *TaskInfo            // 发送任务，和保存的task一致
+	responseCh  chan responseHeartbeatMsg // 接收worker响应
+}
+
+type TaskInfo struct {
+	Condition   TaskStatus
+	TaskType    TaskType
+	Id          int
+	ProcessFile []string
+	ReduceNum   int
+}
+
+type responseHeartbeatMsg struct {
+}
+
+type taskHeartbeatMsg struct {
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -62,16 +109,50 @@ func (c *Coordinator) Done() bool {
 // main/mrcoordinator.go calls this function.
 // nReduce is the number of reduce tasks to use.
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
-	c := Coordinator{}
+	c := Coordinator{
+		files:         files,
+		nMap:          len(files),
+		nReduce:       nReduce,
+		taskHolder:    make(map[int]*TaskInfo),
+		completeTask:  0,
+		taskCounter:   0,
+		schedulePhase: UNSTART,
 
-	// Your code here.
+		heartbeatCh: make(chan *TaskInfo, len(files)),
+		responseCh:  make(chan responseHeartbeatMsg, nReduce),
+	}
+
+	c.makeMaptask(files)
 
 	c.server()
 	return &c
 }
 
-// func main() {
-// 	coordinator := &Coordinator{}
-// 	go coordinator.server()
-// 	select {}
-// }
+func (c *Coordinator) makeMaptask(files []string) {
+	fmt.Println("开始任务切割，并传送到TaskChannel")
+	if c.schedulePhase == UNSTART {
+		c.schedulePhase = MAPPING
+	}
+
+	for _, file := range files {
+		task := TaskInfo{
+			Condition:   WAITING,
+			TaskType:    MAP,
+			Id:          c.taskCounter,
+			ProcessFile: []string{file},
+			ReduceNum:   c.nReduce,
+		}
+
+		c.taskHolder[task.Id] = &task
+		c.taskCounter++
+		c.heartbeatCh <- &task
+		fmt.Println(task.Id, "making map task")
+	}
+}
+
+func (c *Coordinator) AssignTask(args *ExampleArgs, task *TaskInfo) error {
+	if c.schedulePhase == MAPPING {
+		*task = *<-c.heartbeatCh
+	}
+	return nil
+}

@@ -2,10 +2,16 @@ package mr
 
 // package main
 
-import "fmt"
-import "log"
-import "net/rpc"
-import "hash/fnv"
+import (
+	"fmt"
+	"hash/fnv"
+	"io/ioutil"
+	"json"
+	"log"
+	"net/rpc"
+	"os"
+	"strconv"
+)
 
 // Map functions return a slice of KeyValue.
 type KeyValue struct {
@@ -25,11 +31,69 @@ func ihash(key string) int {
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
 
-	// Your worker implementation here.
+	alive := true
+	for alive {
+		task := RequestTask()
+		switch task.TaskType {
+		case MAP:
+			{
+				fmt.Println(task.Id, "MAP 任务处理中")
+				doMapTask(mapf, task)
+				fmt.Println(task.Id, "MAP 任务完成")
+				doneTask(task)
+			}
+		}
+	}
+}
 
-	// uncomment to send the Example RPC to the coordinator.
-	CallExample()
+// 返回任务结果，可以使用channel
+func doneTask(task TaskInfo) {
 
+}
+
+func RequestTask() TaskInfo {
+	reply := TaskInfo{}
+	args := ExampleArgs{}
+	ok := call("Coordinator.AssignTask", &args, &reply)
+	if !ok {
+		fmt.Println("请求任务失败")
+	}
+
+	fmt.Println(reply.TaskType, "请求任务成功")
+	return reply
+}
+
+func doMapTask(mapf func(string, string) []KeyValue, task TaskInfo) {
+	var intermediate []KeyValue
+	filename := task.ProcessFile[0]
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("cannot open %v", filename)
+	}
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Fatalf("cannot read %v", filename)
+	}
+	file.Close()
+
+	intermediate = mapf(filename, string(content)) // 任务文件中内容转换成中间表示存储起来
+
+	// 中间表示放在hashkv中
+	reduceNum := task.ReduceNum
+	HashKV := make([][]KeyValue, reduceNum)
+	for _, kv := range intermediate {
+		HashKV[ihash(kv.Key)%reduceNum] = append(HashKV[ihash(kv.Key)%reduceNum], kv)
+	}
+
+	for i := 0; i < reduceNum; i++ {
+		oname := "mr-tmp-" + strconv.Itoa(task.Id) + "-" + strconv.Itoa(i)
+		ofile, _ := os.Create(oname)
+		enc := json.NewEncoder(ofile)
+		for _, kv := range HashKV[i] {
+			enc.Encode(kv)
+		}
+		ofile.Close()
+	}
 }
 
 // example function to show how to make an RPC call to the coordinator.
