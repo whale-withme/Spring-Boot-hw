@@ -40,15 +40,21 @@ func Worker(mapf func(string, string) []KeyValue,
 				fmt.Println(task.Id, "MAP 任务处理中")
 				doMapTask(mapf, task)
 				fmt.Println(task.Id, "MAP 任务完成")
-				doneTask(task)
+				doneTask(task, MAPPED)
 			}
 		}
 	}
 }
 
 // 返回任务结果，可以使用channel
-func doneTask(task TaskInfo) {
-
+func doneTask(task TaskInfo, status TaskStatus) {
+	response := TaskResponse{
+		TaskId:    task.Id,
+		TaskType:  task.TaskType,
+		Condition: status,
+	}
+	reply := ExampleArgs{}
+	call("Coordinator.ResponeseTask", &response, &reply)
 }
 
 func RequestTask() TaskInfo {

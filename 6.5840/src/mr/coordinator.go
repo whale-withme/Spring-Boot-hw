@@ -9,7 +9,10 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
+	"sync"
 )
+
+var mu sync.Mutex
 
 // job状态
 type JobPhase int
@@ -29,19 +32,13 @@ const (
 	REDUCE
 )
 
-//////////
-
-type TaskStatus int
+type TaskStatus string
 
 const (
-	WAITING TaskStatus = iota
+	WAITING TaskStatus = "WAITING"
+	MAPPED  TaskStatus = "MAPPED"
+	REDUCED TaskStatus = "REDUCED"
 )
-
-// type Task struct {
-// 	filename string
-// 	id       int
-// 	status   TaskStatus
-// }
 
 type Coordinator struct {
 	// Your definitions here.
@@ -53,8 +50,8 @@ type Coordinator struct {
 	schedulePhase JobPhase // 任务完成/调度时期
 	taskHolder    map[int]*TaskInfo
 
-	heartbeatCh chan *TaskInfo            // 发送任务，和保存的task一致
-	responseCh  chan responseHeartbeatMsg // 接收worker响应
+	heartbeatCh chan *TaskInfo    // 发送任务，和保存的task一致
+	responseCh  chan TaskResponse // 接收worker响应
 }
 
 type TaskInfo struct {
@@ -65,10 +62,10 @@ type TaskInfo struct {
 	ReduceNum   int
 }
 
-type responseHeartbeatMsg struct {
-}
-
-type taskHeartbeatMsg struct {
+type TaskResponse struct {
+	TaskType  TaskType
+	TaskId    int
+	Condition TaskStatus
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -101,7 +98,9 @@ func (c *Coordinator) Done() bool {
 	ret := false
 
 	// Your code here.
-
+	if c.schedulePhase == DONE {
+		ret = true
+	}
 	return ret
 }
 
@@ -119,7 +118,7 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 		schedulePhase: UNSTART,
 
 		heartbeatCh: make(chan *TaskInfo, len(files)),
-		responseCh:  make(chan responseHeartbeatMsg, nReduce),
+		responseCh:  make(chan TaskResponse, nReduce),
 	}
 
 	c.makeMaptask(files)
@@ -155,4 +154,38 @@ func (c *Coordinator) AssignTask(args *ExampleArgs, task *TaskInfo) error {
 		*task = *<-c.heartbeatCh
 	}
 	return nil
+}
+
+func (c *Coordinator) ResponeseTask(response *TaskResponse, reply *ExampleArgs) error {
+	c.responseCh <- *response
+	return nil
+}
+
+// 修改任务状态
+func (c *Coordinator) HandleResponse() {
+	response := <-c.responseCh
+
+	switch response.TaskType {
+	case MAP:
+		{
+			id := response.TaskId
+			c.taskHolder[id].Condition = response.Condition
+			mu.Lock()
+			c.completeTask++
+			mu.Unlock()
+		}
+	}
+}
+
+func (c *Coordinator) checkDone() {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if c.schedulePhase == MAPPING && c.completeTask == c.nMap {
+		c.schedulePhase = REDUCING
+		c.completeTask = 0
+	} else if c.schedulePhase == REDUCING && c.completeTask == c.nReduce {
+		c.schedulePhase = DONE
+		c.completeTask = 0
+	}
 }
