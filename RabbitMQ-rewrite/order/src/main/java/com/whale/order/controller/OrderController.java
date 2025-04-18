@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
 
     @Autowired
-    private static final Logger logger = LoggerFactory.getLogger();
+    private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
     
     @GetMapping("/order")
     public String createOrder(){
-        
+        return "ok";
     }
 }

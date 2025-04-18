@@ -4,3 +4,6 @@ instruction.md
 .vscode/
 
 mybatis*/
+**/mr-tmp*
+**/mr-out*
+# 6.5840/

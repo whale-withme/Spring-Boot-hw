@@ -4,6 +4,7 @@
 - rabbitmq
 - redis
 - concurrency coding
+- mit6.824 lab1
   
 目前还在尝试重写一个秒杀项目的后端处理逻辑，也会放在这个repo下面，完成之后会分离出去。  
 ![项目架构图](./seckill-rewrite/images/image.png)
