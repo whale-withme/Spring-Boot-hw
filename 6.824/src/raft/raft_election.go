@@ -11,8 +11,7 @@ func (rf *Raft) startElection() {
 		CandidateId: rf.me,
 	}
 
-	var grantedVotes int32
-	grantedVotes = 1
+	var grantedVotes int32 = 1
 	rf.voteFor = rf.me
 
 	for serverId, _ := range rf.peers {
@@ -38,16 +37,11 @@ func (rf *Raft) startElection() {
 							// Be a leader
 							rf.changeServerStatus(LEADER)
 							DPrintf("candiadte %v become leader, term %v", rf.me, rf.currentTerm)
-							rf.brotcastHeartbeat()
+							rf.broadcastHeartbeat()
 						}
 					}
-
 				}
 			}
 		}(serverId)
 	}
-}
-
-func (rf *Raft) brotcastHeartbeat() {
-
 }

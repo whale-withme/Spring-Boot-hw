@@ -81,6 +81,8 @@ type Raft struct {
 	matchIndex []int
 }
 
+type entry struct{}
+
 // return currentTerm and whether this server
 // believes it is the leader.
 func (rf *Raft) GetState() (int, bool) {
@@ -184,7 +186,7 @@ func (rf *Raft) RequestVote(request *RequestVoteArgs, response *RequestVoteReply
 	// whose term matches prevLogTerm (§5.3)
 
 	rf.voteFor = request.CandidateId
-	rf.electionTimer.Reset(RandomElectionTimeout())
+	rf.electionRest(RandomElectionTimeout())
 	response.Term, response.VoteGranted = request.Term, true
 }
 

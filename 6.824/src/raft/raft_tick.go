@@ -18,10 +18,15 @@ func (rf *Raft) ticker() {
 				DPrintf("election timeout tigger. %v follower(term %v)ready to change to candidate", rf.me, rf.currentTerm)
 				rf.changeServerStatus(CANDIDATE)
 				rf.currentTerm += 1
-				rf.electionTimer.Reset(RandomElectionTimeout())
+				// rf.electionTimer.Reset(RandomElectionTimeout())
 				rf.startElection()
-				rf.electionTimer.Reset(RandomElectionTimeout())
+				rf.electionRest(RandomElectionTimeout())
 				rf.mu.Unlock()
+			}
+		case <-rf.heartbeatTimer.C:
+			{
+				rf.mu.Lock()
+				DPrintf("leader heartbeat timout")
 			}
 		}
 	}
@@ -29,16 +34,22 @@ func (rf *Raft) ticker() {
 
 // no mutex lock
 func RandomElectionTimeout() time.Duration {
-	// random 150-300 ms election timeout.
-	randomDuration := time.Duration(rand.Intn(150)+150) * time.Millisecond
+	// random 200-300 ms election timeout.
+	randomDuration := time.Duration(rand.Intn(200)+150) * time.Millisecond
 	return randomDuration
 }
 
 // start a new election timer, it sends tick to chan
 // no mutex lock
-func (rf *Raft) Rest(timeout time.Duration) {
+func (rf *Raft) electionRest(timeout time.Duration) {
 	rf.electionTimer = time.NewTimer(timeout)
 	go func() {
 		<-rf.electionTimer.C
 	}()
+}
+
+// no mutex lock
+func (rf *Raft) FixedHeartbeatTimeout() time.Duration {
+	fixedTimeout := time.Duration(100) * time.Millisecond
+	return fixedTimeout
 }
