@@ -18,13 +18,15 @@ type AppendEntriesResponse struct {
 
 // leader broadcast heartbeat
 func (rf *Raft) broadcastHeartbeat(isHeartbeat bool) {
+
 	for peer := range rf.peers {
 		if peer == rf.me {
 			continue
 		}
 		if isHeartbeat {
+			// fmt.Printf("%v%v into broadcastHeartbeat\n", rf.status, rf.me)
 			rf.replicateOneRound(peer)
-			fmt.Printf("leaderId %v send heartbeat to server %v\n", rf.me, peer)
+			fmt.Printf("%v%v send heartbeat to server %v\n", rf.status, rf.me, peer)
 		}
 	}
 }
@@ -32,22 +34,25 @@ func (rf *Raft) broadcastHeartbeat(isHeartbeat bool) {
 // check preLogindex to send appendEntries or send heartbeat
 // Leader use
 func (rf *Raft) replicateOneRound(peer int) {
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
+	// rf.mu.Lock()
+	// defer rf.mu.Unlock()
 	if rf.status != LEADER {
+		fmt.Errorf("%v%v NOT leader\n", rf.status, rf.me)
 		return
 	}
 
+	// fmt.Printf("%v%v into replicaOneRound\n", rf.status, rf.me)
 	prevLogIndex := rf.nextIndex[peer] - 1
 	appendEntry := rf.generateAppendEntryRequest(prevLogIndex)
-	rf.mu.Unlock()
+	// rf.mu.Unlock()
 
-	// rf.mu.unlock() before send RPC
-	response := AppendEntriesResponse{}
-	if rf.sendAppendEntryReqest(peer, &appendEntry, &response) {
-		rf.mu.Lock()
-		// handle AppendEntryResponse...
-	}
+	go func() {
+		response := AppendEntriesResponse{}
+		// fmt.Printf("%v%v send AppendEntries to peer%v\n", rf.status, rf.me, peer)
+		if rf.sendAppendEntryReqest(peer, &appendEntry, &response) {
+		}
+	}()
+
 }
 
 // generate appendEntriesRequest
@@ -64,11 +69,16 @@ func (rf *Raft) generateAppendEntryRequest(prevlogIndex int) AppendEntriesReques
 		Term:         rf.currentTerm,
 		LeaderId:     rf.me,
 		PrevLogIndex: prevlogIndex,
-		PrevLogTerm:  rf.logs[prevlogIndex].Term,
+		// PrevLogTerm:  rf.logs[prevlogIndex].Term,
 		Entries:      entry,
 		LeaderCommit: rf.commitIndex,
 	}
-	fmt.Printf("genreate appendentriesRequest, leaderId: %v, prevLogIndex:%v, prevlogTerm:%v\n", rf.me, prevlogIndex, appendRequest.PrevLogTerm)
+	if prevlogIndex < 0 {
+		appendRequest.PrevLogTerm = 0
+	} else {
+		appendRequest.PrevLogTerm = rf.logs[prevlogIndex].Term
+	}
+	//fmt.Printf("genreate appendentriesRequest, leaderId: %v, prevLogIndex:%v, prevlogTerm:%v\n", rf.me, prevlogIndex, appendRequest.PrevLogTerm)
 
 	return appendRequest
 }
@@ -103,7 +113,7 @@ func (rf *Raft) AppendEntries(request *AppendEntriesRequest, response *AppendEnt
 	}
 
 	rf.changeServerStatus(FOLLOWER)
-	rf.electionRest(RandomElectionTimeout())
+	rf.electionTimer.Reset(RandomElectionTimeout())
 
 	// replica log
 	// ...
@@ -113,5 +123,8 @@ func (rf *Raft) AppendEntries(request *AppendEntriesRequest, response *AppendEnt
 
 func (rf *Raft) sendAppendEntryReqest(peer int, request *AppendEntriesRequest, reply *AppendEntriesResponse) bool {
 	ok := rf.peers[peer].Call("Raft.AppendEntries", request, reply)
+	if !ok {
+		fmt.Printf("%v%v send AppendEntriesRequest error\n", rf.status, rf.me)
+	}
 	return ok
 }

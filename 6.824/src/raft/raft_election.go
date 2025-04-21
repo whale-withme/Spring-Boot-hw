@@ -37,7 +37,7 @@ func (rf *Raft) startElection() {
 				if response.Term == rf.currentTerm && rf.status == CANDIDATE {
 					if response.VoteGranted {
 						atomic.AddInt32(&grantedVotes, 1)
-						fmt.Printf("server%v vote for candidate%v\n", id, rf.me)
+						// fmt.Printf("server%v vote for candidate%v\n", id, rf.me)
 						if grantedVotes > int32(len(rf.peers)/2) {
 							// Be a leader
 							// rf.changeServerStatus(LEADER)
@@ -59,8 +59,8 @@ func (rf *Raft) RequestVote(request *RequestVoteArgs, response *RequestVoteReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	fmt.Printf("%v%v handle requestVote from Candidate%v...\n", rf.status, rf.me, request.CandidateId)
-	if request.Term < rf.currentTerm || (request.Term == rf.currentTerm && rf.status == CANDIDATE && rf.voteFor != -1) {
+	// fmt.Printf("%v%v handle requestVote from Candidate%v...\n", rf.status, rf.me, request.CandidateId)
+	if request.Term < rf.currentTerm || (request.Term == rf.currentTerm && rf.voteFor != -1) {
 		response.Term, response.VoteGranted = rf.currentTerm, false
 		return
 	}
@@ -75,8 +75,9 @@ func (rf *Raft) RequestVote(request *RequestVoteArgs, response *RequestVoteReply
 	// whose term matches prevLogTerm (§5.3)
 
 	rf.voteFor = request.CandidateId
-	rf.electionRest(RandomElectionTimeout())
-	fmt.Printf("%v%v reset election timer\n", rf.status, rf.me)
+	rf.electionTimer.Reset(RandomElectionTimeout())
+	// fmt.Printf("%v%v reset election timer\n", rf.status, rf.me)
+
 	response.Term, response.VoteGranted = request.Term, true
 	if response.VoteGranted {
 		fmt.Printf("%v%v votefor candidate%v\n", rf.status, rf.me, request.CandidateId)
