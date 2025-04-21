@@ -72,6 +72,7 @@ type Raft struct {
 	commitIndex           int // server receives from leader, it tells max log index could be applied.
 	lastApplied           int // server's log index that applied to state machine
 	status                serverStatus
+	logs                  []entry
 	lastResetElectionTime time.Time
 	electionTimer         *time.Timer
 	heartbeatTimer        *time.Timer
@@ -81,7 +82,12 @@ type Raft struct {
 	matchIndex []int
 }
 
-type entry struct{}
+type entry struct {
+	// Necessary field.
+	Term    int
+	Command interface{}
+	Index   int
+}
 
 // return currentTerm and whether this server
 // believes it is the leader.

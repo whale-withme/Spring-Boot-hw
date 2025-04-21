@@ -37,7 +37,7 @@ func (rf *Raft) startElection() {
 							// Be a leader
 							rf.changeServerStatus(LEADER)
 							DPrintf("candiadte %v become leader, term %v", rf.me, rf.currentTerm)
-							rf.broadcastHeartbeat()
+							rf.broadcastHeartbeat(true)
 						}
 					}
 				}
