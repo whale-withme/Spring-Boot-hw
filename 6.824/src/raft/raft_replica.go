@@ -1,11 +1,13 @@
 package raft
 
+import "fmt"
+
 type AppendEntriesRequest struct {
 	Term         int
 	LeaderId     int
 	PrevLogIndex int
 	PrevLogTerm  int
-	Entries      []entry
+	Entries      []Entry
 	LeaderCommit int
 }
 
@@ -16,9 +18,13 @@ type AppendEntriesResponse struct {
 
 // leader broadcast heartbeat
 func (rf *Raft) broadcastHeartbeat(isHeartbeat bool) {
-	for peer, _ := range rf.peers {
+	for peer := range rf.peers {
+		if peer == rf.me {
+			continue
+		}
 		if isHeartbeat {
 			rf.replicateOneRound(peer)
+			fmt.Printf("leaderId %v send heartbeat to server %v\n", rf.me, peer)
 		}
 	}
 }
@@ -46,7 +52,7 @@ func (rf *Raft) replicateOneRound(peer int) {
 
 // generate appendEntriesRequest
 func (rf *Raft) generateAppendEntryRequest(prevlogIndex int) AppendEntriesRequest {
-	entry := make([]entry, 1)
+	entry := make([]Entry, 1)
 
 	// if in range of rf.logs[], then fill up
 	// if no client command, entry should be empty.
@@ -62,7 +68,7 @@ func (rf *Raft) generateAppendEntryRequest(prevlogIndex int) AppendEntriesReques
 		Entries:      entry,
 		LeaderCommit: rf.commitIndex,
 	}
-	DPrintf("genreate appendentriesRequest, leaderId: %v, prevLogIndex:%v, prevlogTerm:%v", rf.me, prevlogIndex, appendRequest.PrevLogTerm)
+	fmt.Printf("genreate appendentriesRequest, leaderId: %v, prevLogIndex:%v, prevlogTerm:%v\n", rf.me, prevlogIndex, appendRequest.PrevLogTerm)
 
 	return appendRequest
 }
@@ -71,7 +77,7 @@ func (rf *Raft) generateAppendEntryRequest(prevlogIndex int) AppendEntriesReques
 func (rf *Raft) AppendEntries(request *AppendEntriesRequest, response *AppendEntriesResponse) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	DPrintf("server %v receive appendentry from %v, status %v", rf.me, request.LeaderId, rf.status)
+	fmt.Printf("server %v receive appendentry from %v, status %v\n", rf.me, request.LeaderId, rf.status)
 
 	// check request.Term acceptable
 	if request.Term < rf.currentTerm {
@@ -86,7 +92,7 @@ func (rf *Raft) AppendEntries(request *AppendEntriesRequest, response *AppendEnt
 	// If an existing entry conflicts with a new one (same index
 	// but different terms), delete the existing entry and all that
 	// follow it (§5.3)
-	if rf.logs[request.PrevLogIndex].Term != request.Term {
+	if request.PrevLogIndex >= 0 && rf.logs[request.PrevLogIndex].Term != request.Term {
 		rf.logs = rf.logs[:request.PrevLogIndex]
 	}
 
@@ -94,7 +100,6 @@ func (rf *Raft) AppendEntries(request *AppendEntriesRequest, response *AppendEnt
 		// If leaderCommit > commitIndex, set commitIndex =
 		// min(leaderCommit, index of last new entry)
 		rf.commitIndex = max(rf.commitIndex, request.LeaderCommit)
-
 	}
 
 	rf.changeServerStatus(FOLLOWER)
