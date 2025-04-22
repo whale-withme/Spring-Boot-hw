@@ -8,11 +8,11 @@ package raft
 // rf = Make(...)
 //   create a new Raft server.
 // rf.Start(command interface{}) (index, term, isleader)
-//   start agreement on a new log entry
+//   start agreement on a new log Entry
 // rf.GetState() (term, isLeader)
 //   ask a Raft for its current term, and whether it thinks it is leader
 // ApplyMsg
-//   each time a new entry is committed to the log, each Raft peer
+//   each time a new Entry is committed to the log, each Raft peer
 //   should send an ApplyMsg to the service (or tester)
 //   in the same server.
 //
@@ -31,7 +31,7 @@ import (
 // committed, the peer should send an ApplyMsg to the service (or
 // tester) on the same server, via the applyCh passed to Make(). set
 // CommandValid to true to indicate that the ApplyMsg contains a newly
-// committed log entry.
+// committed log Entry.
 //
 // in part 2D you'll want to send other kinds of messages (e.g.,
 // snapshots) on the applyCh, but set CommandValid to false for these
@@ -58,36 +58,50 @@ const (
 
 // A Go object implementing a single Raft peer.
 type Raft struct {
-	mu        sync.Mutex          // Lock to protect shared access to this peer's state
-	peers     []*labrpc.ClientEnd // RPC end points of all peers
-	persister *Persister          // Object to hold this peer's persisted state
-	me        int                 // this peer's index into peers[]
-	dead      int32               // set by Kill()
+	mu            sync.Mutex // Lock to protect shared access to this peer's state
+	electionMutex sync.Mutex
+	peers         []*labrpc.ClientEnd // RPC end points of all peers
+	persister     *Persister          // Object to hold this peer's persisted state
+	me            int                 // this peer's index into peers[]
+	dead          int32               // set by Kill()
 
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
 	// state a Raft server must maintain.
-	currentTerm           int // it changes if stsart a new condidate
-	voteFor               int
-	commitIndex           int // server receives from leader, it tells max log index could be applied.
-	lastApplied           int // server's log index that applied to state machine
-	status                serverStatus
-	lastResetElectionTime time.Time
-	electionTimer         *time.Timer
-	heartbeatTimer        *time.Timer
+	currentTerm int // it changes if stsart a new condidate
+	voteFor     int
+	commitIndex int // server receives from leader, it tells max log index could be applied.
+	lastApplied int // server's log index that applied to state machine
+	status      serverStatus
+	logs        []Entry
+	// lastResetElectionTime time.Time
+	electionTimer  *time.Timer
+	heartbeatTimer *time.Timer
+	applyCh        chan ApplyMsg
 
 	// on leaders.
 	nextIndex  []int
 	matchIndex []int
 }
 
+type Entry struct {
+	// Necessary field.
+	Term    int
+	Command interface{}
+	Index   int
+}
+
 // return currentTerm and whether this server
 // believes it is the leader.
 func (rf *Raft) GetState() (int, bool) {
-
-	var term int
-	var isleader bool
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	var term int = rf.currentTerm
+	var isleader bool = false
 	// Your code here (2A).
+	if rf.status == LEADER {
+		isleader = true
+	}
 	return term, isleader
 }
 
@@ -161,35 +175,10 @@ type RequestVoteReply struct {
 	VoteGranted bool
 }
 
-// example RequestVote RPC handler.
-// Other server calls handler, rf gives resonse
-func (rf *Raft) RequestVote(request *RequestVoteArgs, response *RequestVoteReply) {
-	// Your code here (2A, 2B).
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-	defer DPrintf("Condidate id %v, current term %v, follower %v voteGranted: %v\n", request.CandidateId, request.Term, rf.me, response.VoteGranted)
-
-	if request.Term < rf.currentTerm || (request.Term == rf.currentTerm && rf.status == CANDIDATE && rf.voteFor != -1) {
-		response.Term, response.VoteGranted = rf.currentTerm, false
-		return
-	}
-
-	if request.Term > rf.currentTerm {
-		rf.changeServerStatus(FOLLOWER)
-		rf.currentTerm = request.Term
-		rf.voteFor = -1 // clean voteFor
-	}
-
-	// Reply false if log doesn’t contain an entry at prevLogIndex
-	// whose term matches prevLogTerm (§5.3)
-
-	rf.voteFor = request.CandidateId
-	rf.electionTimer.Reset(RandomElectionTimeout())
-	response.Term, response.VoteGranted = request.Term, true
-}
-
 // no mutex lock.
 func (rf *Raft) changeServerStatus(target serverStatus) {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 	rf.status = target
 }
 
@@ -289,10 +278,21 @@ func (rf *Raft) killed() bool {
 // for any long-running work.
 func Make(peers []*labrpc.ClientEnd, me int,
 	persister *Persister, applyCh chan ApplyMsg) *Raft {
-	rf := &Raft{}
-	rf.peers = peers
-	rf.persister = persister
-	rf.me = me
+	rf := &Raft{
+		peers:          peers,
+		persister:      persister,
+		me:             me,
+		dead:           0,
+		applyCh:        applyCh,
+		currentTerm:    0,
+		voteFor:        -1,
+		status:         FOLLOWER,
+		logs:           make([]Entry, 1),
+		electionTimer:  time.NewTimer(RandomElectionTimeout()),
+		heartbeatTimer: time.NewTimer(FixedHeartbeatTimeout()),
+		nextIndex:      make([]int, len(peers)),
+		matchIndex:     make([]int, len(peers)),
+	}
 
 	// Your initialization code here (2A, 2B, 2C).
 

@@ -1,7 +1,10 @@
 package raft
 
-import "time"
-import "math/rand"
+import (
+	"fmt"
+	"math/rand"
+	"time"
+)
 
 // The ticker go routine starts a new election if this peer hasn't received
 // heartsbeats recently.
@@ -11,16 +14,36 @@ func (rf *Raft) ticker() {
 		// Your code here to check if a leader election should
 		// be started and to randomize sleeping time using
 		// time.Sleep().
+		// rf.electionMutex.Lock()
+		// defer rf.electionMutex.Unlock()
 		select {
 		case <-rf.electionTimer.C:
 			{
+				// if peer is leader, it should not election?
+				if rf.status == LEADER {
+					continue
+				}
 				rf.mu.Lock()
-				DPrintf("election timeout tigger. %v follower(term %v)ready to change to candidate", rf.me, rf.currentTerm)
-				rf.changeServerStatus(CANDIDATE)
+				fmt.Printf("election timeout tigger. follower%v (term %v)ready to change to candidate\n", rf.me, rf.currentTerm)
+				// rf.changeServerStatus(CANDIDATE)
+				rf.status = CANDIDATE
 				rf.currentTerm += 1
-				rf.electionTimer.Reset(RandomElectionTimeout())
+				// rf.electionTimer.Reset(RandomElectionTimeout())
+				// fmt.Printf("checkpoint: before starteelection()")
 				rf.startElection()
+				// fmt.Printf("checkpoint: after starteelection()")
 				rf.electionTimer.Reset(RandomElectionTimeout())
+				rf.mu.Unlock()
+			}
+		case <-rf.heartbeatTimer.C:
+			{
+				rf.mu.Lock()
+				// fmt.Printf("leader heartbeat timout\n")
+				if rf.status == LEADER {
+					rf.broadcastHeartbeat(true)
+					// rf.heartbeatTimer.Reset(FixedHeartbeatTimeout()) // leader reset timer after send heartbeat
+				}
+				rf.heartbeatTimer.Reset(FixedHeartbeatTimeout())
 				rf.mu.Unlock()
 			}
 		}
@@ -29,16 +52,31 @@ func (rf *Raft) ticker() {
 
 // no mutex lock
 func RandomElectionTimeout() time.Duration {
-	// random 150-300 ms election timeout.
-	randomDuration := time.Duration(rand.Intn(150)+150) * time.Millisecond
+	// random 200-300 ms election timeout.
+	randomDuration := time.Duration(rand.Intn(300)+100) * time.Millisecond
 	return randomDuration
 }
 
 // start a new election timer, it sends tick to chan
 // no mutex lock
-func (rf *Raft) Rest(timeout time.Duration) {
-	rf.electionTimer = time.NewTimer(timeout)
-	go func() {
-		<-rf.electionTimer.C
-	}()
+// func (rf *Raft) electionRest(timeout time.Duration) {
+// 	rf.electionMutex.Lock()
+// 	defer rf.electionMutex.Unlock()
+// 	rf.electionTimer = time.NewTimer(timeout)
+// }
+
+// // reset heartbeatTimer with fixed timeout.
+// func (rf *Raft) heartbeatRest(timeout time.Duration) {
+// 	rf.mu.Lock()
+// 	defer rf.mu.Unlock()
+// 	rf.heartbeatTimer = time.NewTimer(timeout)
+// 	go func() {
+// 		<-rf.heartbeatTimer.C
+// 	}()
+// }
+
+// no mutex lock
+func FixedHeartbeatTimeout() time.Duration {
+	fixedTimeout := time.Duration(100) * time.Millisecond
+	return fixedTimeout
 }
