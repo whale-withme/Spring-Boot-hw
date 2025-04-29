@@ -53,7 +53,7 @@ func (rf *Raft) applier() {
 
 		rf.mu.Lock()
 		DPrintf("leader%v send ApplyMsg to channel", rf.me)
-		rf.lastApplied = max(rf.lastApplied, commitIndex)
+		rf.lastApplied = Max(rf.lastApplied, commitIndex)
 		rf.mu.Unlock()
 	}
 }

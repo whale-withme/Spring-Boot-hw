@@ -438,7 +438,7 @@ func (cfg *config) nCommitted(index int) (int, interface{}) {
 
 		cfg.mu.Lock()
 		cmd1, ok := cfg.logs[i][index]
-		cfg.t.Logf("server%v cmd: %v ", i, cmd1)
+		DPrintf("server%v cmd: %v ", i, cmd1)
 		cfg.mu.Unlock()
 
 		if ok {
@@ -520,14 +520,14 @@ func (cfg *config) one(cmd interface{}, expectedServers int, retry bool) int {
 			}
 		}
 
-		cfg.t.Logf("newEntry index: %v\n", index)
+		DPrintf("newEntry index: %v\n", index)
 		if index != -1 {
 			// somebody claimed to be the leader and to have
 			// submitted our command; wait a while for agreement.
 			t1 := time.Now()
 			for time.Since(t1).Seconds() < 2 {
 				nd, cmd1 := cfg.nCommitted(index)
-				cfg.t.Logf("%v/%vservers commit, command: %v\n", nd, expectedServers, cmd1)
+				DPrintf("%v/%vservers commit, command: %v\n", nd, expectedServers, cmd1)
 				if nd > 0 && nd >= expectedServers {
 					// committed
 					// cfg.t.Logf("%v/%vservers commit, command: %v\n", nd, expectedServers, cmd1)

@@ -266,7 +266,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 		matchIndex:     make([]int, len(peers)),
 	}
 	rf.applyCond = sync.NewCond(&rf.mu)
-
+	rf.readPersist(persister.ReadRaftState())
 	// Your initialization code here (2A, 2B, 2C).
 	for i := 0; i < len(peers); i++ {
 		rf.matchIndex[i], rf.nextIndex[i] = 0, rf.getLastLog().Index+1
@@ -276,7 +276,6 @@ func Make(peers []*labrpc.ClientEnd, me int,
 		}
 	}
 	// initialize from state persisted before a crash
-	rf.readPersist(persister.ReadRaftState())
 
 	// start ticker goroutine to start elections
 	go rf.ticker()

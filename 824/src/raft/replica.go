@@ -1,7 +1,8 @@
 package raft
 
 import "sort"
-import "testing"
+
+// import "testing"
 
 type AppendEntriesRequest struct {
 	Term         int
@@ -60,7 +61,7 @@ func (rf *Raft) replicateOneRound(peer int) {
 			// handle AppendEntry Response...
 			rf.mu.Lock()
 			// nextlogIndex cause bug.... prevlogIndex < 0
-			rf.handleAppendEntriesResponse(peer, appendEntryRequest, response)
+			rf.HandleAppendEntriesResponse(peer, appendEntryRequest, response)
 			DPrintf("peer%v nextlogIndex: %v", peer, rf.nextIndex[peer])
 			rf.mu.Unlock()
 		}
@@ -118,16 +119,15 @@ func (rf *Raft) AppendEntries(request *AppendEntriesRequest, response *AppendEnt
 		response.Term, response.Success = rf.currentTerm, false
 
 		if rf.getLastLog().Index < request.PrevLogIndex {
-			response.ConflictTerm, response.ConflictIndex = -1, rf.getLastLog().Index+1
+			response.ConflictTerm, response.ConflictIndex = -1, rf.getLastLog().Index
 		} else {
 			firstIndex := rf.getFirstLog().Index
 			response.ConflictTerm = rf.logs[request.PrevLogIndex-firstIndex].Term
-
 			index := request.PrevLogIndex - 1
 			for index >= firstIndex && rf.logs[index-firstIndex].Term == response.ConflictTerm {
 				index--
 			}
-			// response.confliceIndex means roll back to rf.log[] which
+			DPrintf("peer%v old_log index:%v term:%v roll_back_log index:%v term:%v", rf.me, request.PrevLogIndex, request.Term, index, rf.logs[index].Term)
 			response.ConflictIndex = index
 		}
 		return
@@ -137,12 +137,10 @@ func (rf *Raft) AppendEntries(request *AppendEntriesRequest, response *AppendEnt
 	// consider two parts:
 	// 1. follower conflicts with leader, and it replica from response.ConflictIndex + 1 in the NEXT REPLICA
 	// 2. no conflicts, everything goes right. just localIndex > len(..) , it needs resize longer.
-	firstlogIndex := rf.getFirstLog().Index
+	firstIndex := rf.getFirstLog().Index
 	for index, entry := range request.Entries {
-		localIndex := entry.Index - firstlogIndex
-		if localIndex >= len(rf.logs) || rf.logs[localIndex].Term != entry.Term {
-			rf.logs = append(rf.logs[:localIndex], request.Entries[index:]...)
-			// DPrintf("peer%v newlogEntry %v", rf.me, rf.logs[localIndex:])
+		if entry.Index-firstIndex >= len(rf.logs) || rf.logs[entry.Index-firstIndex].Term != entry.Term {
+			rf.logs = append(rf.logs[:entry.Index-firstIndex], request.Entries[index:]...)
 			break
 		}
 	}
@@ -154,16 +152,14 @@ func (rf *Raft) AppendEntries(request *AppendEntriesRequest, response *AppendEnt
 	response.Success, response.Term = true, rf.currentTerm
 }
 
-func (rf *Raft) handleAppendEntriesResponse(peer int, request *AppendEntriesRequest, response *AppendEntriesResponse) {
+func (rf *Raft) HandleAppendEntriesResponse(peer int, request *AppendEntriesRequest, response *AppendEntriesResponse) {
 	//DPrintf("Before handle, peer%v prevlogIndex: %v", peer, rf.nextIndex[peer]-1)
-	t := &testing.T{}
 	if rf.status == LEADER && request.Term == rf.currentTerm {
 		if response.Success {
 			rf.matchIndex[peer] = request.PrevLogIndex + len(request.Entries)
 			rf.nextIndex[peer] = rf.matchIndex[peer] + 1
 			// calculate math votes available ... and update rf.commitIndex if it needs.
 			//rf.advanceComitIndexForLeader()
-			t.Logf("peer%v match entry index: %v", peer, rf.matchIndex[peer])
 			rf.advanceComitIndexForLeader()
 		} else {
 			if response.Term > request.Term {
@@ -172,7 +168,7 @@ func (rf *Raft) handleAppendEntriesResponse(peer int, request *AppendEntriesRequ
 				rf.persist()
 			} else if response.Term == rf.currentTerm {
 				rf.nextIndex[peer] = response.ConflictIndex
-				if response.ConflictIndex != -1 {
+				if response.ConflictTerm != -1 {
 					rf.nextIndex[peer] = response.ConflictIndex + 1
 				}
 			}
@@ -205,8 +201,8 @@ func (rf *Raft) advanceComitIndexForLeader() {
 }
 
 func (rf *Raft) advanceComitIndex(leaderCommitIndex int) {
-	minnerCommitindex := min(leaderCommitIndex, rf.getLastLog().Index)
-	if minnerCommitindex > rf.commitIndex { // BUG fina!!!!!! not minnerCommitindex > leadercommitIndex
+	minnerCommitindex := Min(leaderCommitIndex, rf.getLastLog().Index)
+	if minnerCommitindex > rf.commitIndex { // BUG final!!!!!! not minnerCommitindex > leadercommitIndex
 		rf.commitIndex = minnerCommitindex
 		rf.applyCond.Signal()
 		DPrintf("peer%v update minner commitIndex to %v", rf.me, minnerCommitindex)
