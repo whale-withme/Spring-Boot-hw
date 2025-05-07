@@ -1,6 +1,11 @@
 package raft
 
 import "log"
+import (
+	"math/rand"
+	"sync"
+	"time"
+)
 
 // Debugging
 const Debug = false
@@ -35,4 +40,39 @@ func Max(i int, j int) int {
 	} else {
 		return i
 	}
+}
+
+type lockedRand struct {
+	mu   sync.Mutex
+	rand *rand.Rand
+}
+
+func (r *lockedRand) Intn(n int) int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.rand.Intn(n)
+}
+
+var globalRand = &lockedRand{
+	rand: rand.New(rand.NewSource(time.Now().UnixNano())),
+}
+
+const (
+	HeartbeatTimeout = 100
+	ElectionTimeout  = 1200
+)
+
+// no mutex lock
+func RandomElectionTimeout() time.Duration {
+	// random 200-300 ms election timeout.
+	// randomDuration := time.Duration(rand.Intn(1200)+200) * time.Millisecond
+	// return randomDuration
+	return time.Duration(ElectionTimeout+globalRand.Intn(ElectionTimeout)) * time.Millisecond
+}
+
+// no mutex lock
+func FixedHeartbeatTimeout() time.Duration {
+	// fixedTimeout := time.Duration(50) * time.Millisecond
+	// return fixedTimeout
+	return time.Duration(HeartbeatTimeout) * time.Millisecond
 }

@@ -23,6 +23,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 
 	newEntry := Entry{rf.currentTerm, command, rf.getLastLog().Index + 1}
 	rf.logs = append(rf.logs, newEntry)
+	rf.persist()
 	rf.matchIndex[rf.me], rf.nextIndex[rf.me] = newEntry.Index, newEntry.Index+1
 	rf.persist()
 	rf.broadcastHeartbeat(false)

@@ -99,6 +99,7 @@ func (rf *Raft) AppendEntries(request *AppendEntriesRequest, response *AppendEnt
 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
+	defer rf.persist()
 	//DPrintf("server %v receive appendentry from %v, status %v\n", rf.me, request.LeaderId, rf.status)
 
 	if request.Term < rf.currentTerm { // AppendEntry not valid

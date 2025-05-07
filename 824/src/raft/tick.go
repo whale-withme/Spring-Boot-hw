@@ -1,10 +1,5 @@
 package raft
 
-import (
-	"math/rand"
-	"time"
-)
-
 // The ticker go routine starts a new election if this peer hasn't received
 // heartsbeats recently.
 func (rf *Raft) ticker() {
@@ -33,20 +28,13 @@ func (rf *Raft) ticker() {
 				// DPrintf("leader heartbeat timout\n")
 				if rf.status == LEADER {
 					rf.broadcastHeartbeat(true)
-					// rf.heartbeatTimer.Reset(FixedHeartbeatTimeout()) // leader reset timer after send heartbeat
+					rf.heartbeatTimer.Reset(FixedHeartbeatTimeout()) // leader reset timer after send heartbeat
 				}
-				rf.heartbeatTimer.Reset(FixedHeartbeatTimeout())
+				// rf.heartbeatTimer.Reset(FixedHeartbeatTimeout())
 				rf.mu.Unlock()
 			}
 		}
 	}
-}
-
-// no mutex lock
-func RandomElectionTimeout() time.Duration {
-	// random 200-300 ms election timeout.
-	randomDuration := time.Duration(rand.Intn(1200)+200) * time.Millisecond
-	return randomDuration
 }
 
 // change state for server state
@@ -66,19 +54,14 @@ func (rf *Raft) changeStatus(targetStatus serverStatus) {
 		{
 			// Hint: One way to fail to reach agreement in the early Lab 2B
 			// tests is to hold repeated elections even though the leader is alive.
-			rf.electionTimer.Stop()
-			rf.heartbeatTimer.Reset(FixedHeartbeatTimeout())
+			// rf.electionTimer.Stop()
+			// rf.heartbeatTimer.Reset(FixedHeartbeatTimeout())
 			lastlog := rf.getLastLog()
 			for i := 0; i < len(rf.peers); i++ {
 				rf.matchIndex[i], rf.nextIndex[i] = 0, lastlog.Index+1
 			}
-
+			rf.electionTimer.Stop()
+			rf.heartbeatTimer.Reset(FixedHeartbeatTimeout())
 		}
 	}
-}
-
-// no mutex lock
-func FixedHeartbeatTimeout() time.Duration {
-	fixedTimeout := time.Duration(50) * time.Millisecond
-	return fixedTimeout
 }
