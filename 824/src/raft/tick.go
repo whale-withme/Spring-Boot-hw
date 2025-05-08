@@ -38,6 +38,7 @@ func (rf *Raft) ticker() {
 }
 
 // change state for server state
+// you should clean rf.voteFor and reset rf.currentTerm manually
 func (rf *Raft) changeStatus(targetStatus serverStatus) {
 	if rf.status == targetStatus {
 		return

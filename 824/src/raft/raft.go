@@ -164,6 +164,20 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 
 }
 
+type InstallSnapshotRequest struct {
+	Term              int
+	LeaderId          int
+	LastIncludedIndex int
+	LastIncludedTerm  int
+	// Offset            int
+	Data []byte
+	// Done bool
+}
+
+type InstallSnapshotResponse struct {
+	Term int
+}
+
 // example RequestVote RPC arguments structure.
 // field names must start with capital letters!
 type RequestVoteArgs struct {
@@ -211,6 +225,11 @@ type RequestVoteReply struct {
 // the struct itself.
 func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
 	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
+	return ok
+}
+
+func (rf *Raft) sendInstallSnapshotRequest(server int, args *InstallSnapshotRequest, reply *InstallSnapshotResponse) bool {
+	ok := rf.peers[server].Call("Raft.InstallSnapshot", args, reply)
 	return ok
 }
 

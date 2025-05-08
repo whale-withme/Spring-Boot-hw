@@ -50,10 +50,17 @@ func (rf *Raft) replicateOneRound(peer int) {
 	prevLogIndex := rf.nextIndex[peer] - 1
 	DPrintf("peer%v prevlogIndex: %v", peer, prevLogIndex)
 	appendEntryRequest := rf.generateAppendEntryRequest(prevLogIndex)
-	// rf.mu.Unlock()
 
 	if prevLogIndex < rf.getFirstLog().Index {
 		DPrintf("error, not complete installSnapshot")
+		rf.mu.Unlock()
+		snapshotRequest := rf.generateSnapshotRequest()
+		snapshotResponse := new(InstallSnapshotResponse)
+		if rf.sendInstallSnapshotRequest(peer, snapshotRequest, snapshotResponse) {
+			rf.mu.Lock()
+			rf.handleInstallSnapshotResponse(peer, snapshotRequest, snapshotResponse)
+			rf.mu.Unlock()
+		}
 	} else {
 		rf.mu.Unlock()
 		response := new(AppendEntriesResponse)
