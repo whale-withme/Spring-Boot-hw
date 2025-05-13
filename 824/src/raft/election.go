@@ -87,6 +87,8 @@ func (rf *Raft) RequestVote(request *RequestVoteArgs, response *RequestVoteReply
 }
 
 func (rf *Raft) isLogupdate(term, index int) bool {
-	lastLogIndex := rf.getLastLog().Index
-	return term > rf.logs[lastLogIndex].Term || ((term == rf.logs[lastLogIndex].Term) && (index >= lastLogIndex))
+	// lastLogIndex := rf.getLastLog().Index
+	// return term > rf.logs[lastLogIndex].Term || ((term == rf.logs[lastLogIndex].Term) && (index >= lastLogIndex))
+	lastlog := rf.getLastLog()
+	return term > lastlog.Term || (term == lastlog.Term && index >= lastlog.Index)
 }
