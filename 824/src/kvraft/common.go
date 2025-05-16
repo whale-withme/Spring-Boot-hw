@@ -6,7 +6,20 @@ const (
 	ErrWrongLeader = "ErrWrongLeader"
 )
 
-type Err string
+type Err uint
+
+const (
+	Ok Err = iota
+	Err_WrongLeader
+	Err_Timeout
+	Err_Nokey
+)
+
+const (
+	OpGet    string = "OpGet"
+	OpPut    string = "OpPut"
+	OpAppend string = "OpAppend"
+)
 
 // Put or Append
 type PutAppendArgs struct {
@@ -28,6 +41,19 @@ type GetArgs struct {
 }
 
 type GetReply struct {
+	Err   Err
+	Value string
+}
+
+type CommandRequest struct {
+	Key       string
+	Value     string
+	ClientId  int64
+	CommandId int64
+	Op        string
+}
+
+type CommandResponse struct {
 	Err   Err
 	Value string
 }
