@@ -1,5 +1,9 @@
 package kvraft
 
+import "time"
+
+const KVSERVER_TIMEOUT = 500 * time.Millisecond
+
 const (
 	OK             = "OK"
 	ErrNoKey       = "ErrNoKey"
@@ -20,6 +24,11 @@ const (
 	OpPut    string = "OpPut"
 	OpAppend string = "OpAppend"
 )
+
+// command interface{}
+type Command struct {
+	*CommandRequest
+}
 
 // Put or Append
 type PutAppendArgs struct {
@@ -56,4 +65,10 @@ type CommandRequest struct {
 type CommandResponse struct {
 	Err   Err
 	Value string
+}
+
+// kvserver 维护的
+type OperationContext struct {
+	MaxAppliedCommandId int64
+	LastResponse        CommandResponse
 }
